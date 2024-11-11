@@ -1,6 +1,6 @@
 '''
-# SRB2ModCompiler v5.4 by Lumyni (felixlumyni on discord)
-# Requires https:--www.python.org/
+# SRB2ModCompiler v5.5 by Lumyni (felixlumyni on discord)
+# Requires https://www.python.org/
 # Messes w/ files, only edit this if you know what you're doing!
 '''
 
@@ -491,26 +491,35 @@ def directory_explorer():
 
 def create_or_update_zip(source_path: str, destination_path: str, zip_name: str):
     import io
+    import os
     import zipfile
+    
     zip_full_path = os.path.join(destination_path, zip_name)
     compressionmethod = zipfile.ZIP_DEFLATED
-
+    
     # Check if the destination zip file already exists
     if os.path.exists(zip_full_path):
         # Read the existing zip file into memory
         with open(zip_full_path, 'rb') as existing_zip_file:
             existing_zip_data = io.BytesIO(existing_zip_file.read())
-
+            
         # Create a temporary in-memory zip file
         temp_zip_data = io.BytesIO()
-
+        
         # Compare source files with existing zip contents
-        with zipfile.ZipFile(existing_zip_data, 'r') as existing_zip, zipfile.ZipFile(temp_zip_data, 'a', compression=compressionmethod) as temp_zip:
+        with zipfile.ZipFile(existing_zip_data, 'r') as existing_zip, \
+             zipfile.ZipFile(temp_zip_data, 'w', compression=compressionmethod) as temp_zip:
+            
+            # First, copy all existing files from the old zip
+            for item in existing_zip.namelist():
+                temp_zip.writestr(item, existing_zip.read(item))
+            
+            # Then process the source directory
             for root, _, files in os.walk(source_path):
                 for file in files:
                     source_file_path = os.path.join(root, file)
                     rel_path = os.path.relpath(source_file_path, source_path)
-
+                    
                     # Exclude this script and git files
                     if not (file.endswith('.py')
                             or file.endswith('.pyw')
@@ -519,6 +528,7 @@ def create_or_update_zip(source_path: str, destination_path: str, zip_name: str)
                             or file.endswith('.ase')
                             or file.startswith('.')
                             or '.git' in rel_path):
+                            
                         if rel_path in existing_zip.namelist():
                             # Read the existing file from the zip archive
                             with existing_zip.open(rel_path) as existing_file:
@@ -526,7 +536,6 @@ def create_or_update_zip(source_path: str, destination_path: str, zip_name: str)
                             # Read the source file data
                             with open(source_file_path, 'rb') as source_file:
                                 source_file_data = source_file.read()
-
                             # Compare files and update if needed
                             if existing_file_data != source_file_data:
                                 temp_zip.writestr(rel_path, source_file_data)
@@ -534,13 +543,14 @@ def create_or_update_zip(source_path: str, destination_path: str, zip_name: str)
                             # If the file is not in the existing zip, add it
                             with open(source_file_path, 'rb') as source_file:
                                 temp_zip.writestr(rel_path, source_file.read())
-
+        
         # Update the destination zip file with the modified contents
         with open(zip_full_path, 'wb') as updated_zip_file:
             updated_zip_file.write(temp_zip_data.getvalue())
-
     else:
+        # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(zip_full_path), exist_ok=True)
+        
         # If the destination zip file doesn't exist, create a new one
         with zipfile.ZipFile(zip_full_path, 'w', compression=compressionmethod) as new_zip:
             for root, _, files in os.walk(source_path):

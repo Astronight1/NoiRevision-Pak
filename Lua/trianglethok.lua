@@ -144,7 +144,7 @@ addHook("MobjThinker", function(mo)
 		bruh.frame = $1 | FF_FULLBRIGHT
 		cringe.colorized = true
 		cringe.frame = $|FF_FULLBRIGHT
-		cringe.fuse = 5
+		cringe.fuse = ((mo.target.player.driftlevel/100)*2) + 3
 
 		if not checkvis
 			checkvis = true
