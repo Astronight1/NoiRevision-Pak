@@ -1,1 +1,1 @@
--skipintro -server +wait 1 +"map test -f"
+-skipintro +exec drracing.cfg

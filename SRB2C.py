@@ -1,6 +1,6 @@
 '''
 # SRB2ModCompiler v5.4 by Lumyni (felixlumyni on discord)
-# Requires https://www.python.org/
+# Requires https:--www.python.org/
 # Messes w/ files, only edit this if you know what you're doing!
 '''
 

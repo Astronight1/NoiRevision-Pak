@@ -77,25 +77,25 @@ local function Triangalation(p, driftlevel)
 	end
 end
 
-local TIMETRANS = function(time, speed, prefix, suffix, debug, minimum, cap)
-    prefix = prefix or "V_"
-    suffix = suffix or "TRANS"
-    speed = speed or 1
+-- local TIMETRANS = function(time, speed, prefix, suffix, debug, minimum, cap)
+--     prefix = prefix or "V_"
+--     suffix = suffix or "TRANS"
+--     speed = speed or 1
 
-    local level = (time / speed / 10) * 10
-    level = max(10, min(100, level))
+--     local level = (time / speed / 10) * 10
+--     level = max(10, min(100, level))
     
-    if minimum then level = max($, minimum / 10 * 10) end
-    if cap then level = min($, cap / 10 * 10) end
+--     if minimum then level = max($, minimum / 10 * 10) end
+--     if cap then level = min($, cap / 10 * 10) end
 
-    if level == 100 then
-        if debug then print(level) end
-        return 0
-    else
-        if debug then print(level) end
-        return _G[prefix .. (100 - level) .. suffix]
-    end
-end
+--     if level == 100 then
+--         if debug then print(level) end
+--         return 0
+--     else
+--         if debug then print(level) end
+--         return _G[prefix .. (100 - level) .. suffix]
+--     end
+-- end
 
 local function wrapValue(value, minValue, maxValue)
     local range = maxValue - minValue + 1
@@ -117,28 +117,46 @@ addHook("MobjThinker", function(mo)
 end, MT_DRIFTSPARK)
 
 local angle = 0
-
+local checkvis = false
 addHook("MobjThinker", function(mo)
 	if not (mo and mo.valid and mo.target and mo.target.valid) then return end
 		local spinspeed = R_PointToDist2(0, 0, mo.target.player.mo.momx, mo.target.player.mo.momy)
 		angle = $+spinspeed
 		wrapValue(angle, 0, 359)
 		mo.rollangle = FixedAngle(angle)
-		local bruh = P_SpawnGhostMobj(mo)	
-		
-		local smoothtrans = TIMETRANS(clamp(mo.target.player.driftlevel, 0, 100), 1, "FF_TRANS", "", false)
+		local bruh = P_SpawnGhostMobj(mo)
+		local cringe = P_SpawnGhostMobj(mo.target)
+
+		--local smoothtrans = TIMETRANS(99-(mo.target.player.trianglecharge or 0),1,"FF_TRANS","", true) or 0
+
 		if mo.target.player.driftlevel < 100 and mo.target.player.driftcharge > -1
 			mo.color = SKINCOLOR_GREY
-			mo.frame = $|smoothtrans
+			mo.frame = $|FF_TRANS50
 		elseif mo.target.trianglecolor
 			mo.color = mo.target.trianglecolor
 		end
-		if mo.renderflags & RF_DONTDRAW
-			mo.renderflags = $ & ~RF_DONTDRAW
+
+		if mo.renderflags&RF_DONTDRAW
+			mo.renderflags = $&~RF_DONTDRAW
 		end
-		//bruh.colorized = true
+
 		bruh.fuse = 7
 		bruh.frame = $1 | FF_FULLBRIGHT
+		cringe.colorized = true
+		cringe.frame = $|FF_FULLBRIGHT
+		cringe.fuse = 5
+
+		if not checkvis
+			checkvis = true
+		else
+			checkvis = false
+		end
+
+		if checkvis
+			cringe.renderflags = $|RF_DONTDRAW
+		else
+			cringe.renderflags = $&~RF_DONTDRAW
+		end
 
 		P_MoveOrigin(mo, mo.target.x, mo.target.y, mo.target.z)
 end, MT_TRIANGALATION)
@@ -186,7 +204,7 @@ addHook("PlayerThink", function(p)
 	
 	-- tricharge timelimit
 	if p.drift and p.fastfall and p.mo.eflags&MFE_JUSTHITFLOOR then
-		p.trianglecharge = 1*TICRATE
+		p.trianglecharge = 53 -- ~1.5 seconds (53)
 	end
 	
 	-- trithok graphics
@@ -198,11 +216,11 @@ addHook("PlayerThink", function(p)
 		p.triangalation_spawned = 0
 	end
 	
-	//print(p.trianglecharge)
+	--print(p.trianglecharge)
 
 	-- do da trithok
 	if p.trianglecharge and not (p.cmd.buttons&BT_DRIFT) then
-		//print("HI")
+		--print("HI")
 		TriangleThok(p, playerspeed)
 		p.trianglecharge = 0
 		p.tiregrease = 0
