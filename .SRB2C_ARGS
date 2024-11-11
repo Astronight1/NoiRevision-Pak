@@ -1,1 +1,1 @@
--skipintro -server +downloading off +wait 1 +"map test -f"
+-skipintro -server +downloading off +exec drracing.cfg +wait 1 +"map test -f"
