@@ -204,7 +204,7 @@ addHook("PlayerThink", function(p)
 	
 	-- tricharge timelimit
 	if p.drift and p.fastfall and p.mo.eflags&MFE_JUSTHITFLOOR then
-		p.trianglecharge = 53 -- ~1.5 seconds (53)
+		p.trianglecharge = 3*TICRATE/2 -- ~1.5 seconds
 	end
 	
 	-- trithok graphics
