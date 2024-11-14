@@ -1,6 +1,6 @@
 '''
-# SRB2ModCompiler v5.5 by Lumyni (felixlumyni on discord)
-# Requires https:--www.python.org/
+# SRB2ModCompiler v5.7 by Lumyni (felixlumyni on discord)
+# Requires https://www.python.org/
 # Messes w/ files, only edit this if you know what you're doing!
 '''
 
@@ -11,9 +11,9 @@ LAZY IMPORTS:
 - argparse: Only when running the script
 - subprocess, datetime and shlex: Only in the run() function
 - winreg: Only in the set_environment_variable() and get_environment_variable() functions
-- platform: Same as above, but also in the 'cls' command
+- platform: Same as above, but also in the "cls" command
 - tkinter: Only in the file_explorer() and directory_explorer() functions
-- zipfile: Only in the unzip_pk3() and create_or_update_zip() functions
+- io and zipfile: Only in the unzip_pk3() and create_or_update_zip() functions
 - shutil: Only in the unzip_pk3() function
 - re: Only in the create_versioninfo() function
 '''
@@ -491,35 +491,34 @@ def directory_explorer():
 
 def create_or_update_zip(source_path: str, destination_path: str, zip_name: str):
     import io
-    import os
     import zipfile
-    
     zip_full_path = os.path.join(destination_path, zip_name)
     compressionmethod = zipfile.ZIP_DEFLATED
-    
+
     # Check if the destination zip file already exists
     if os.path.exists(zip_full_path):
+        verbose(f"Zip file '{zip_name}' already exists, updating it...")
         # Read the existing zip file into memory
         with open(zip_full_path, 'rb') as existing_zip_file:
             existing_zip_data = io.BytesIO(existing_zip_file.read())
-            
         # Create a temporary in-memory zip file
         temp_zip_data = io.BytesIO()
-        
+
         # Compare source files with existing zip contents
         with zipfile.ZipFile(existing_zip_data, 'r') as existing_zip, \
              zipfile.ZipFile(temp_zip_data, 'w', compression=compressionmethod) as temp_zip:
             
             # First, copy all existing files from the old zip
+            verbose("Copying existing files to the temporary zip...")
             for item in existing_zip.namelist():
                 temp_zip.writestr(item, existing_zip.read(item))
             
             # Then process the source directory
+            verbose("Processing source directory...")
             for root, _, files in os.walk(source_path):
                 for file in files:
                     source_file_path = os.path.join(root, file)
                     rel_path = os.path.relpath(source_file_path, source_path)
-                    
                     # Exclude this script and git files
                     if not (file.endswith('.py')
                             or file.endswith('.pyw')
@@ -528,8 +527,10 @@ def create_or_update_zip(source_path: str, destination_path: str, zip_name: str)
                             or file.endswith('.ase')
                             or file.startswith('.')
                             or '.git' in rel_path):
-                            
+                        
+                        # Check if the file already exists in the zip
                         if rel_path in existing_zip.namelist():
+                            verbose(f"Updating existing file: {rel_path}")
                             # Read the existing file from the zip archive
                             with existing_zip.open(rel_path) as existing_file:
                                 existing_file_data = existing_file.read()
@@ -540,19 +541,24 @@ def create_or_update_zip(source_path: str, destination_path: str, zip_name: str)
                             if existing_file_data != source_file_data:
                                 temp_zip.writestr(rel_path, source_file_data)
                         else:
+                            verbose(f"Adding new file: {rel_path}")
                             # If the file is not in the existing zip, add it
                             with open(source_file_path, 'rb') as source_file:
                                 temp_zip.writestr(rel_path, source_file.read())
-        
+
         # Update the destination zip file with the modified contents
+        verbose("Updating the destination zip file...")
         with open(zip_full_path, 'wb') as updated_zip_file:
             updated_zip_file.write(temp_zip_data.getvalue())
+        verbose(f"Zip file '{zip_name}' updated successfully!")
     else:
+        verbose(f"Zip file '{zip_name}' does not exist, creating a new one...")
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(zip_full_path), exist_ok=True)
         
         # If the destination zip file doesn't exist, create a new one
         with zipfile.ZipFile(zip_full_path, 'w', compression=compressionmethod) as new_zip:
+            verbose("Processing source directory and adding files to the new zip...")
             for root, _, files in os.walk(source_path):
                 for file in files:
                     source_file_path = os.path.join(root, file)
@@ -566,6 +572,7 @@ def create_or_update_zip(source_path: str, destination_path: str, zip_name: str)
                             or file.startswith('.')
                             or '.git' in rel_path):
                         new_zip.write(source_file_path, rel_path)
+        verbose(f"New zip file '{zip_name}' created successfully!")
 
 def sanitized_exe_filepath(user_input):
     vscode = 'TERM_PROGRAM' if 'TERM_PROGRAM' in os.environ.keys() and os.environ['TERM_PROGRAM'] == 'vscode' else ''
