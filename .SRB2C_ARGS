@@ -1,1 +1,1 @@
--skipintro -server +exec drracing.cfg +bots 1 +wait 2 +"map test -f"
+-skipintro -server +exec drracing.cfg +bots 0 +gamespeed 2 +cheats on +wait 2 +"map aerial"

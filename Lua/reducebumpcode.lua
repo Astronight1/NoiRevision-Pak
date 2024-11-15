@@ -41,7 +41,7 @@ local function reducebumpcode(pmo, other) -- took this from old fightclub, thank
         p.mo.momy = bumpdivfactor.value*$/bumpdisfactor.value
         --o.mo.momx = bumpdivfactor.value*$/bumpdisfactor.value
         --o.mo.momy = bumpdivfactor.value*$/bumpdisfactor.value
-        print("CHACHING")
+        --print("CHACHING")
     end
 
     if p.bumpgperiod < 1 then p.bumpgperiod = bumpcollisiontime.value end
