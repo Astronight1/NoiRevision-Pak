@@ -1,3 +1,4 @@
+-- buff ebrake a tiny bit to make it stronger then regular breaking - astro
 addHook("PlayerThink", function(p)
     local playerspeed = R_PointToDist2(0, 0, p.mo.momx, p.mo.momy)
 	if (p.cmd.buttons&BT_ACCELERATE) and (p.cmd.buttons&BT_BRAKE)

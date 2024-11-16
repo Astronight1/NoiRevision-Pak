@@ -1,28 +1,8 @@
+-- triangle thok mechanics done by astro, visuals by denny
+
 freeslot("MT_TRIANGALATION")
 freeslot("S_TRIANGALATION")
 freeslot("SPR_HYPS")
-
-local spritex = CV_RegisterVar{
-	name = "/x",
-	defaultvalue = 0,
-	flags = CV_NETVAR,
-	PossibleValue = {MIN = -10000, MAX = 10000}
-}
-
-local spritey = CV_RegisterVar{
-	name = "/y",
-	defaultvalue = 0,
-	flags = CV_NETVAR,
-	PossibleValue = {MIN = -10000, MAX = 10000}
-}
-
-local spriterolltime = CV_RegisterVar{
-	name = "/time",
-	defaultvalue = 2,
-	flags = CV_NETVAR,
-	PossibleValue = {MIN = -10000, MAX = 10000}
-}
-
 
 mobjinfo[MT_TRIANGALATION] = {
 	spawnstate = S_TRIANGALATION,
@@ -77,26 +57,6 @@ local function Triangalation(p, driftlevel)
 	end
 end
 
--- local TIMETRANS = function(time, speed, prefix, suffix, debug, minimum, cap)
---     prefix = prefix or "V_"
---     suffix = suffix or "TRANS"
---     speed = speed or 1
-
---     local level = (time / speed / 10) * 10
---     level = max(10, min(100, level))
-    
---     if minimum then level = max($, minimum / 10 * 10) end
---     if cap then level = min($, cap / 10 * 10) end
-
---     if level == 100 then
---         if debug then print(level) end
---         return 0
---     else
---         if debug then print(level) end
---         return _G[prefix .. (100 - level) .. suffix]
---     end
--- end
-
 local function wrapValue(value, minValue, maxValue)
     local range = maxValue - minValue + 1
     return ((value - minValue) % range + range) % range + minValue
@@ -126,8 +86,6 @@ addHook("MobjThinker", function(mo)
 		mo.rollangle = FixedAngle(angle)
 		local bruh = P_SpawnGhostMobj(mo)
 		local cringe = P_SpawnGhostMobj(mo.target)
-
-		--local smoothtrans = TIMETRANS(99-(mo.target.player.trianglecharge or 0),1,"FF_TRANS","", true) or 0
 
 		if mo.target.player.driftlevel < 100 and mo.target.player.driftcharge > -1
 			mo.color = SKINCOLOR_GREY
@@ -174,11 +132,7 @@ addHook("PlayerThink", function(p)
 	if not p.driftlevel
 		p.driftlevel = 0
 	end
-	
--- 	if p.trianglecolor and not driftlevel
--- 		p.trianglecolor = SKINCOLOR_GREY
--- 	end
-		
+
 	-- grease cancel
 	if p.tiregrease and (p.cmd.buttons&BT_LUAA) then
 		p.tiregrease = 0
@@ -215,8 +169,6 @@ addHook("PlayerThink", function(p)
 		P_RemoveMobj(p.mo.triangalationobject)
 		p.triangalation_spawned = 0
 	end
-	
-	--print(p.trianglecharge)
 
 	-- do da trithok
 	if p.trianglecharge and not (p.cmd.buttons&BT_DRIFT) then
