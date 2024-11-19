@@ -1,13 +1,13 @@
 local bumpdivfactor = CV_RegisterVar{
     name = "/bumpdivfactor",
-    defaultvalue = 1,
+    defaultvalue = 3,
     flags = CV_NETVAR,
     PossibleValue = {MIN = -10000, MAX = 10000}
 }
 
 local bumpdisfactor = CV_RegisterVar{
     name = "/bumpdisfactor",
-    defaultvalue = 2,
+    defaultvalue = 4,
     flags = CV_NETVAR,
     PossibleValue = {MIN = -10000, MAX = 10000}
 }
@@ -23,6 +23,7 @@ addHook("PlayerThink", function(p)
     if p.bumpgperiod == nil
         p.bumpgperiod = 0
     end
+
     if p.bumpgperiod > 0
         p.bumpgperiod = $-1
     end
@@ -35,7 +36,10 @@ local function reducebumpcode(pmo, other) -- took this from old fightclub, thank
     
     local p = pmo.player
 
-    if p.bumpgperiod == 0 --and o.bumpgperiod == 0
+    local playerspeed = R_PointToDist2(0, 0, p.mo.momx, p.mo.momy)
+
+    -- if im not in grow, invuln, or im not hyued, and im not in flashtics
+    if p.bumpgperiod == 0 and p.invincibilitytimer < 1 and p.growshrinktimer < 1 and p.hyudorotimer < 1 and p.flashing < 1 and playerspeed > 5*FRACUNIT
         p.mo.momx = bumpdivfactor.value*$/bumpdisfactor.value
         p.mo.momy = bumpdivfactor.value*$/bumpdisfactor.value
     end
