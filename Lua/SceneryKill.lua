@@ -4,8 +4,10 @@
 -- annoying holy shit DIE DIE DIE MUDA MUDA MUDA MUDA- MUDAAAAAAAAAAAAAAAAA
 addHook("MapLoad", function()
 	for mo in mobjs.iterate("mobj")
-		if ((mo.flags&MF_SOLID) and (mo.flags&MF_PAIN)) -- kys
-			mo.flags = $|MF_NOGRAVITY|MF_NOCLIPTHING
+		if (((mo.flags&MF_SOLID) and (mo.flags&MF_PAIN)) or ((mo.flags&MF_SOLID) and (mo.flags&MF_SCENERY))) -- kys
+			if not mo.type == MT_SPIKE or not mo.type == MT_WALLSPIKE or not mo.type == MT_WALLSPIKEBASE 
+				mo.flags = $|MF_NOGRAVITY|MF_NOCLIPTHING
+			end
 		end
 	end
 end)

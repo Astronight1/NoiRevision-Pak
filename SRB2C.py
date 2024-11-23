@@ -1,5 +1,5 @@
 '''
-# SRB2ModCompiler v5.7 by Lumyni (felixlumyni on discord)
+# SRB2ModCompiler v6.3 by Lumyni (felixlumyni on discord)
 # Requires https://www.python.org/
 # Messes w/ files, only edit this if you know what you're doing!
 '''
@@ -11,11 +11,12 @@ LAZY IMPORTS:
 - argparse: Only when running the script
 - subprocess, datetime and shlex: Only in the run() function
 - winreg: Only in the set_environment_variable() and get_environment_variable() functions
-- platform: Same as above, but also in the "cls" command
+- platform: Same as above, but also in the run and "cls" commands
 - tkinter: Only in the file_explorer() and directory_explorer() functions
 - io and zipfile: Only in the unzip_pk3() and create_or_update_zip() functions
 - shutil: Only in the unzip_pk3() function
 - re: Only in the create_versioninfo() function
+- traceback: Only when there is an error in the run() function while verbose is enabled
 '''
 
 runcount = 0
@@ -26,6 +27,7 @@ def verbose(*args, **kwargs):
         print(*args, **kwargs)
 
 def main():
+    global isVerbose
     vscode = 'TERM_PROGRAM' if 'TERM_PROGRAM' in os.environ.keys() and os.environ['TERM_PROGRAM'] == 'vscode' else ''
     RED = '\033[31m' if vscode else ''
     GREEN = '\033[32m' if vscode else ''
@@ -143,6 +145,9 @@ def main():
                 run()
             except Exception as e:
                 print(f"{RED}Error: {e}")
+                if isVerbose:
+                    import traceback
+                    traceback.print_exc()
                 print(f"Double check your configuration files. If this is an internal error, please report this!{BLUE}")
         elif command == "multirun":
             print("Enter the number of instances you want to run.")
@@ -154,6 +159,9 @@ def main():
                     run(multiCount=command)
                 except Exception as e:
                     print(f"{RED}Error: {e}")
+                    if isVerbose:
+                        import traceback
+                        traceback.print_exc()
                     print(f"Double check your configuration files. If this is an internal error, please report this!{BLUE}")
             except ValueError:
                 print("Operation cancelled due to invalid input.")
@@ -192,7 +200,6 @@ def main():
             else:
                 print("Operation cancelled. No valid file selected or found.")
         elif command == "verbose":
-            global isVerbose
             isVerbose = not isVerbose
             print(f"Verbose mode is now {GREEN if isVerbose else RED}{('enabled' if isVerbose else 'disabled')}{BLUE}.")
         elif command == "mod":
@@ -420,19 +427,49 @@ def get_environment_variable(variable: str):
         finally:
             winreg.CloseKey(key)
     else:
-        return os.environ.get(variable)
+        if sysvar is not None:
+            return sysvar
+
+        shell_config_file = os.path.expanduser("~/.bashrc")  # Modify if you're using a different shell
+        try:
+            with open(shell_config_file, "r") as file:
+                lines = file.readlines()
+                for line in lines:
+                    if line.startswith(f"export {variable}="):
+                        # Extract value from the line, e.g., export MY_VAR="value"
+                        return line.split('=')[1].strip().strip('"')
+        except FileNotFoundError:
+            return None
 
     return sysvar
 
 def set_environment_variable(variable, value):
+    import os
     import platform
+    
     if platform.system() == "Windows":
         import winreg
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', 0, winreg.KEY_SET_VALUE)
         winreg.SetValueEx(key, variable, 0, winreg.REG_EXPAND_SZ, value)
         winreg.CloseKey(key)
     else:
-        os.environ[variable] = value
+        shell_config_file = os.path.expanduser("~/.bashrc")  # Adjust for your shell, e.g., ~/.zshrc for zsh
+        export_command = f"export {variable}={value}\n"
+
+        with open(shell_config_file, "a+") as file:
+            file.seek(0)
+            lines = file.readlines()
+            if any(line.startswith(f"export {variable}=") for line in lines):
+                file.seek(0)
+                file.truncate()
+                for line in lines:
+                    if line.startswith(f"export {variable}="):
+                        file.write(export_command)
+                    else:
+                        file.write(line)
+            else:
+                file.write(export_command)
+        os.system(f"source {shell_config_file}")
 
 def choose_srb2_executable():
     ext = "Do keep in mind your current path will be overwritten!" if get_environment_variable("SRB2C_LOC") else ""
@@ -490,11 +527,20 @@ def directory_explorer():
     return directory_path
 
 def create_or_update_zip(source_path: str, destination_path: str, zip_name: str):
+    '''
+    This function aims to create or update a zip file using as least write operations as possible.
+    SSD health is important when you're zipping a lot of files frequently.
+    '''
     import io
     import zipfile
+    import platform
     zip_full_path = os.path.join(destination_path, zip_name)
     compressionmethod = zipfile.ZIP_DEFLATED
 
+    if platform.system() == "Linux" and os.path.exists(zip_full_path):
+        os.remove(zip_full_path)
+        verbose(f"Removed existing zip file on Linux: {zip_name}")
+    
     # Check if the destination zip file already exists
     if os.path.exists(zip_full_path):
         verbose(f"Zip file '{zip_name}' already exists, updating it...")
