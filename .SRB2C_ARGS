@@ -1,1 +1,1 @@
--skipintro -server +exec drracing.cfg +bots 1 +gamespeed 1 +cheats on +wait 2 +"map test -f" +wait 2 +give 3 99
+-skipintro -server +exec drracing.cfg +exec noirevision.cfg +exec itemodds.cfg +bots 1 +cheats on +wait 2 +"map test -f" +wait 2 +give 3 99
